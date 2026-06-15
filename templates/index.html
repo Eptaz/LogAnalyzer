@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pi Monitor — Anomaly Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --border:    #21262d;
+    --muted:     #8b949e;
+    --text:      #e6edf3;
+    --amber:     #f59e0b;
+    --amber-dim: #78490a;
+    --red:       #ef4444;
+    --red-dim:   #7f1d1d;
+    --green:     #22c55e;
+    --green-dim: #14532d;
+    --blue:      #3b82f6;
+    --mono:      'JetBrains Mono', monospace;
+    --sans:      'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .logo-icon {
+    width: 28px; height: 28px;
+    border: 2px solid var(--amber);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+
+  .header-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.6;
+  }
+
+  #status-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    margin-right: 5px;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.35; }
+  }
+
+  main { padding: 28px 32px; max-width: 1300px; margin: 0 auto; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent, var(--border));
+  }
+
+  .stat-card.c-amber { --accent: var(--amber); }
+  .stat-card.c-red   { --accent: var(--red); }
+  .stat-card.c-green { --accent: var(--green); }
+  .stat-card.c-blue  { --accent: var(--blue); }
+
+  .stat-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 10px;
+    font-weight: 500;
+  }
+
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .stat-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+    font-family: var(--mono);
+  }
+
+  .section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  thead tr {
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+  }
+
+  th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+  td {
+    padding: 10px 14px;
+    color: var(--text);
+    vertical-align: middle;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .badge-critical { background: var(--red-dim);   color: var(--red);   }
+  .badge-warning  { background: var(--amber-dim);  color: var(--amber); }
+  .badge-info     { background: #1d3a5f;            color: var(--blue);  }
+
+  .crit-bar {
+    width: 60px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .crit-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+
+  .empty {
+    padding: 48px;
+    text-align: center;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+
+  .refresh-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .refresh-btn:hover { border-color: var(--amber); color: var(--amber); }
+
+  .muted { color: var(--muted); }
+
+  @media (max-width: 900px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    main { padding: 16px; }
+    header { padding: 14px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">π</div>
+    Pi Monitor
+  </div>
+  <div class="header-meta">
+    <span id="status-dot"></span><span id="db-status">connecting…</span><br>
+    <span id="last-refresh" class="muted">—</span>
+  </div>
+</header>
+
+<main>
+
+  <div class="stats-grid">
+    <div class="stat-card c-amber">
+      <div class="stat-label">Anomalies totales</div>
+      <div class="stat-value" id="s-total">—</div>
+    </div>
+    <div class="stat-card c-blue">
+      <div class="stat-label">Groupes détectés</div>
+      <div class="stat-value" id="s-groups">—</div>
+    </div>
+    <div class="stat-card c-red">
+      <div class="stat-label">Groupes critiques</div>
+      <div class="stat-value" id="s-critical">—</div>
+    </div>
+    <div class="stat-card c-green">
+      <div class="stat-label">Dernier événement</div>
+      <div class="stat-value" style="font-size:13px; padding-top:4px;" id="s-last">—</div>
+      <div class="stat-sub" id="s-last-processed">—</div>
+    </div>
+  </div>
+
+  <div class="section-title">
+    Groupes d'anomalies
+    <button class="refresh-btn" onclick="loadAll()">↻ Rafraîchir</button>
+  </div>
+  <div class="table-wrap" id="groups-wrap">
+    <div class="empty">Chargement…</div>
+  </div>
+
+  <div class="section-title">Groupes récents</div>
+  <div class="table-wrap" id="anomalies-wrap">
+    <div class="empty">Chargement…</div>
+  </div>
+
+</main>
+
+<script>
+const ACTION_RANK = { info: 1, warning: 2, critical: 3 };
+
+function badge(action) {
+  const cls = action === 'critical' ? 'badge-critical' : action === 'warning' ? 'badge-warning' : 'badge-info';
+  return `<span class="badge ${cls}">${action ?? '—'}</span>`;
+}
+
+function critBar(action) {
+  const rank = ACTION_RANK[action] ?? 0;
+  const pct  = (rank / 3) * 100;
+  const color = action === 'critical' ? '#ef4444' : action === 'warning' ? '#f59e0b' : '#3b82f6';
+  return `<div class="crit-bar"><div class="crit-bar-fill" style="width:${pct}%;background:${color}"></div></div>`;
+}
+
+function fmt(ts) {
+  if (!ts) return '—';
+  return ts.replace('T', ' ').slice(0, 16);
+}
+
+function fmtNum(v, decimals = 1) {
+  return v != null ? Number(v).toFixed(decimals) : '—';
+}
+
+async function loadStats() {
+  try {
+    const [stats, meta] = await Promise.all([
+      fetch('/api/stats').then(r => r.json()),
+      fetch('/api/metadata').then(r => r.json()),
+    ]);
+    document.getElementById('s-total').textContent    = stats.total_anomalies ?? '—';
+    document.getElementById('s-groups').textContent   = stats.total_groups ?? '—';
+    document.getElementById('s-critical').textContent = stats.critical_groups ?? '—';
+    document.getElementById('s-last').textContent     = fmt(stats.last_seen);
+    document.getElementById('s-last-processed').textContent =
+      meta.last_processed_timestamp ? 'traité : ' + fmt(meta.last_processed_timestamp) : '';
+    document.getElementById('db-status').textContent  = 'DB connectée';
+  } catch {
+    document.getElementById('db-status').textContent = 'DB inaccessible';
+  }
+}
+
+async function loadGroups() {
+  const wrap = document.getElementById('groups-wrap');
+  try {
+    const data = await fetch('/api/groups').then(r => r.json());
+    if (!data.length) { wrap.innerHTML = '<div class="empty">Aucun groupe détecté.</div>'; return; }
+    wrap.innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Source</th><th>Début</th><th>Fin</th>
+          <th>Anomalies</th><th>Criticité</th><th>Temp max</th>
+          <th>CPU moy.</th><th>RAM moy.</th><th>Notifié</th>
+        </tr></thead>
+        <tbody>
+          ${data.map(g => `<tr>
+            <td class="muted" style="font-size:11px">${g.source ?? '—'}</td>
+            <td>${fmt(g.group_start)}</td>
+            <td>${fmt(g.group_end)}</td>
+            <td style="text-align:center">${g.count ?? '—'}</td>
+            <td>${critBar(g.max_action)}</td>
+            <td>${fmtNum(g.max_temp)} °C</td>
+            <td>${fmtNum(g.avg_cpu)} %</td>
+            <td>${fmtNum(g.avg_ram)} %</td>
+            <td style="color:${g.notified ? '#22c55e' : '#8b949e'}">${g.notified ? '✓' : '○'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch {
+    wrap.innerHTML = '<div class="empty">Erreur lors du chargement des groupes.</div>';
+  }
+}
+
+async function loadAnomalies() {
+  const wrap = document.getElementById('anomalies-wrap');
+  try {
+    const data = await fetch('/api/anomalies').then(r => r.json());
+    if (!data.length) { wrap.innerHTML = '<div class="empty">Aucun groupe enregistré.</div>'; return; }
+    wrap.innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Timestamp</th><th>Source</th><th>Action</th>
+          <th>Temp.</th><th>Seuil</th><th>CPU</th><th>RAM</th><th>Durée</th>
+        </tr></thead>
+        <tbody>
+          ${data.map(a => `<tr>
+            <td style="color:var(--muted)">${fmt(a.timestamp)}</td>
+            <td style="font-size:11px;color:var(--muted)">${a.source ?? '—'}</td>
+            <td>${badge(a.action)}</td>
+            <td>${fmtNum(a.temperature)} °C</td>
+            <td style="color:var(--muted)">${fmtNum(a.threshold)} °C</td>
+            <td>${fmtNum(a.cpu)} %</td>
+            <td>${fmtNum(a.ram)} %</td>
+            <td style="color:var(--muted);font-size:11px">${a.duration ?? '—'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch {
+    wrap.innerHTML = '<div class="empty">Erreur lors du chargement des groupes.</div>';
+  }
+}
+
+function loadAll() {
+  loadStats();
+  loadGroups();
+  loadAnomalies();
+  document.getElementById('last-refresh').textContent =
+    'mis à jour ' + new Date().toLocaleTimeString('fr-FR');
+}
+
+loadAll();
+setInterval(loadAll, 300_000);
+</script>
+</body>
+</html>

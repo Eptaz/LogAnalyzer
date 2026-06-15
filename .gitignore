@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.env
+.gitignore
+*.db
+*.json
+venv/
+dist/
+*.log
+build/
+data/
+*.csv
+Logs/*.csv
+Logs/Historique/CPU/*.csv
+Logs/Historique/RAM/*.csv
+Logs/Historique/Temp/*.csv

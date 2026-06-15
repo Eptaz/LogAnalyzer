@@ -1,0 +1,22 @@
+version: '3.9'
+
+services:
+  loganalyzer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: loganalyzer
+    env_file:
+      - .env
+    environment:
+      - DB_PATH=/data/anomalies.db
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./Logs:/app/Logs
+      - ./data:/data
+      - ./templates:/app/templates
+      - ./Main.py:/app/Main.py
+      - ./app.py:/app/app.py
+      - ./requirements.txt:/app/requirements.txt
+    restart: unless-stopped
