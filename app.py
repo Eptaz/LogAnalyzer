@@ -5,6 +5,7 @@ from pathlib import Path
 from flask import Flask, jsonify, render_template
 from dotenv import load_dotenv
 from apscheduler.schedulers.background import BackgroundScheduler
+import mqtt_handler
 
 # Charge le .env depuis la racine du projet
 load_dotenv(Path(__file__).resolve().parent / '.env')
@@ -25,8 +26,18 @@ def run_main_script():
         print(f"[scheduler] Erreur : {e}")
 
 
+_mqtt_client = mqtt_handler.start_mqtt(DB_PATH)
+
 scheduler = BackgroundScheduler()
 scheduler.add_job(run_main_script, "interval", minutes=5, id="main_job", name="Run anomaly detection")
+scheduler.add_job(
+    lambda: mqtt_handler.close_stale_group(DB_PATH),
+    "interval", seconds=60, id="mqtt_stale", name="Close stale MQTT group",
+)
+scheduler.add_job(
+    lambda: mqtt_handler.refresh_threshold(DB_PATH),
+    "interval", minutes=30, id="mqtt_threshold", name="Refresh MQTT threshold",
+)
 if not scheduler.running:
     scheduler.start()
 

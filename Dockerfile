@@ -1,9 +1,9 @@
-FROM python:3.14-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
 # Copy app code and requirements
-COPY Main.py app.py requirements.txt entrypoint.sh ./
+COPY Main.py app.py mqtt_handler.py requirements.txt entrypoint.sh ./
 COPY templates ./templates
 
 RUN apt-get update && apt-get install -y dos2unix && dos2unix entrypoint.sh && rm -rf /var/lib/apt/lists/*

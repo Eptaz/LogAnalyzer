@@ -1,5 +1,6 @@
 import os
 import csv
+import json
 import datetime as dt
 from pathlib import Path
 from dotenv import load_dotenv
@@ -18,9 +19,23 @@ chemin = LOG_ROOT / 'temp.csv'
 with open('/sys/class/thermal/thermal_zone0/temp', 'r') as f:
     current_temp = int(f.read()) / 1000
 
-# Écriture
 timestamp = dt.datetime.now().isoformat(timespec="seconds")
 
+# Écriture CSV (historique)
 with open(chemin, "a", newline="", encoding="utf-8") as f:
     writer = csv.writer(f, delimiter=";")
     writer.writerow([timestamp, current_temp])
+
+# Publish MQTT (temps réel)
+try:
+    import paho.mqtt.publish as publish
+    payload = json.dumps({"timestamp": timestamp, "temperature": current_temp})
+    publish.single(
+        os.environ.get('MQTT_TOPIC_TEMP', 'piloganalyzer/temp'),
+        payload=payload,
+        hostname=os.environ.get('MQTT_BROKER', 'localhost'),
+        port=int(os.environ.get('MQTT_PORT', '1883')),
+        qos=1,
+    )
+except Exception as e:
+    print(f"[mqtt] Publish échoué : {e}")

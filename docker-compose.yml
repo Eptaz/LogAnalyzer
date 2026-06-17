@@ -1,6 +1,15 @@
-version: '3.9'
-
 services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config:ro
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    restart: unless-stopped
+
   loganalyzer:
     build:
       context: .
@@ -10,6 +19,8 @@ services:
       - .env
     environment:
       - DB_PATH=/data/anomalies.db
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
     ports:
       - "5000:5000"
     volumes:
@@ -18,5 +29,8 @@ services:
       - ./templates:/app/templates
       - ./Main.py:/app/Main.py
       - ./app.py:/app/app.py
+      - ./mqtt_handler.py:/app/mqtt_handler.py
       - ./requirements.txt:/app/requirements.txt
+    depends_on:
+      - mosquitto
     restart: unless-stopped
