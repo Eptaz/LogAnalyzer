@@ -29,7 +29,15 @@ LogAnalyzer/
 ├── templates/
 │   └── index.html           # Dashboard UI
 ├── Logs/
+│   ├── temp.csv             # Live temperature readings (written by temp.py)
+│   ├── Cpu.csv              # Live CPU/RAM readings (written by Cpu.py)
+│   ├── anomalies.db         # SQLite database (generated at runtime)
+│   ├── Historique/
+│   │   ├── Temps/           # Archived daily temperature CSVs
+│   │   ├── CPU/             # Archived daily CPU/RAM CSVs
+│   │   └── Moyennes/        # Archived daily average CSVs
 │   └── Script/
+│       ├── debug/           # Debug and error logs
 │       ├── temp.py          # Records CPU temperature to temp.csv
 │       ├── Cpu.py           # Records CPU/RAM usage to Cpu.csv
 │       ├── Moyenne.py       # Computes daily averages
