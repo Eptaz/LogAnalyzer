@@ -20,6 +20,11 @@ Built because existing monitoring solutions (Prometheus, Grafana, InfluxDB…) a
 
 ---
 
+# Interface
+
+<img width="1888" height="915" alt="image" src="https://github.com/user-attachments/assets/9e864ea8-8675-41f3-ae06-2b929a882d9b" />
+
+
 ## Project Structure
 
 ```
