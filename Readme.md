@@ -2,6 +2,8 @@
 
 A lightweight anomaly detection and monitoring tool for Raspberry Pi, built around CSV temperature and CPU/RAM logs. Detects anomalies, groups them by incident, stores results in SQLite, sends push notifications via [ntfy](https://ntfy.sh), and exposes a web dashboard.
 
+Built because existing monitoring solutions (Prometheus, Grafana, InfluxDB…) are too heavy to run comfortably on a Raspberry Pi 5 2 GB. LogAnalyzer is designed from the ground up to stay lean — no bloated stack, just what's needed to detect and report anomalies without taxing a constrained device.
+
 ---
 
 ## Features
@@ -14,6 +16,7 @@ A lightweight anomaly detection and monitoring tool for Raspberry Pi, built arou
 - Flask web dashboard showing recent anomalies and group summaries
 - Scheduler runs anomaly detection every 5 minutes inside the dashboard process
 - Fully configurable via environment variables — no hardcoded paths
+- Lightweight footprint: ~43 MB RAM in operation (measured via VmRSS on Raspberry Pi 5 2 GB)
 
 ---
 
